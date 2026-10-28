@@ -1,50 +1,66 @@
 package tn.esprit.autoloc.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.autoloc.domain.Client;
+import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IClientRepository;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ClientServiceImpl implements IClientService {
 
     private final IClientRepository clientRepository;
 
-    @Override
-    public Client addClient(Client client) {
-        return clientRepository.save(client);
-    }
-
-    @Override
-    public Client updateClient(Client client) {
-        Long id = client.getIdClient();
-        if (id == null || !clientRepository.existsById(id)) {
-            throw new EntityNotFoundException("Client introuvable : " + id);
+    private void validateClient(Client client) {
+        if (client.getNom() == null || client.getNom().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom du client ne peut pas être vide");
         }
+        if (client.getEmail() == null || client.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("L'e-mail du client ne peut pas être vide");
+        }
+    }
+
+    @Override
+    public Client create(Client client) {
+        if (client.getIdClient() != null) {
+            throw new IllegalArgumentException("Un nouveau client ne doit pas avoir d'identifiant");
+        }
+        validateClient(client);
         return clientRepository.save(client);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Client retrieveClient(Long id) {
+    public Client findById(Long id) {
         return clientRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Client introuvable : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Client", id));
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<Client> retrieveAllClients() {
+    public List<Client> findAll() {
         return clientRepository.findAll();
     }
 
     @Override
-    public void removeClient(Long id) {
+    public Client update(Long id, Client client) {
+        validateClient(client);
+        Client existant = findById(id);
+        existant.setNom(client.getNom());
+        existant.setPrenom(client.getPrenom());
+        existant.setEmail(client.getEmail());
+        existant.setTelephone(client.getTelephone());
+        existant.setNumPermis(client.getNumPermis());
+        existant.setDateInscription(client.getDateInscription());
+        return clientRepository.save(existant);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        if (!clientRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Client", id);
+        }
         clientRepository.deleteById(id);
     }
 }

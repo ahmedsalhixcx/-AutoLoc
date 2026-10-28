@@ -1,50 +1,63 @@
 package tn.esprit.autoloc.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.autoloc.domain.Reservation;
+import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IReservationRepository;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ReservationServiceImpl implements IReservationService {
 
     private final IReservationRepository reservationRepository;
 
-    @Override
-    public Reservation addReservation(Reservation reservation) {
-        return reservationRepository.save(reservation);
-    }
-
-    @Override
-    public Reservation updateReservation(Reservation reservation) {
-        Long id = reservation.getIdReservation();
-        if (id == null || !reservationRepository.existsById(id)) {
-            throw new EntityNotFoundException("Reservation introuvable : " + id);
+    private void validateReservation(Reservation reservation) {
+        if (reservation.getDateDebut() != null && reservation.getDateFin() != null
+                && reservation.getDateFin().isBefore(reservation.getDateDebut())) {
+            throw new IllegalArgumentException("La date de fin ne peut pas être antérieure à la date de début");
         }
+    }
+
+    @Override
+    public Reservation create(Reservation reservation) {
+        if (reservation.getIdReservation() != null) {
+            throw new IllegalArgumentException("Une nouvelle réservation ne doit pas avoir d'identifiant");
+        }
+        validateReservation(reservation);
         return reservationRepository.save(reservation);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Reservation retrieveReservation(Long id) {
+    public Reservation findById(Long id) {
         return reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Reservation introuvable : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation", id));
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<Reservation> retrieveAllReservations() {
+    public List<Reservation> findAll() {
         return reservationRepository.findAll();
     }
 
     @Override
-    public void removeReservation(Long id) {
+    public Reservation update(Long id, Reservation reservation) {
+        validateReservation(reservation);
+        Reservation existant = findById(id);
+        existant.setDateDebut(reservation.getDateDebut());
+        existant.setDateFin(reservation.getDateFin());
+        existant.setStatut(reservation.getStatut());
+        existant.setVehicule(reservation.getVehicule());
+        existant.setClient(reservation.getClient());
+        return reservationRepository.save(existant);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        if (!reservationRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Reservation", id);
+        }
         reservationRepository.deleteById(id);
     }
 }
