@@ -5,11 +5,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import tn.esprit.autoloc.domain.Reservation;
 import tn.esprit.autoloc.service.IReservationService;
+import tn.esprit.autoloc.web.dto.ReservationDTO;
 
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class ReservationController {
     @Operation(summary = "Lister toutes les réservations")
     @ApiResponse(responseCode = "200", description = "Liste des réservations récupérée avec succès")
     @GetMapping
-    public List<Reservation> findAll() {
+    public List<ReservationDTO> findAll() {
         return reservationService.findAll();
     }
 
@@ -34,30 +35,31 @@ public class ReservationController {
             @ApiResponse(responseCode = "404", description = "Réservation introuvable")
     })
     @GetMapping("/{id}")
-    public Reservation findById(@Parameter(description = "Identifiant de la réservation") @PathVariable Long id) {
+    public ReservationDTO findById(@Parameter(description = "Identifiant de la réservation") @PathVariable Long id) {
         return reservationService.findById(id);
     }
 
     @Operation(summary = "Créer une nouvelle réservation")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Réservation créée avec succès"),
-            @ApiResponse(responseCode = "400", description = "Date de fin antérieure ou présence d'identifiant")
+            @ApiResponse(responseCode = "400", description = "Date de fin antérieure ou données invalides")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Reservation create(@RequestBody Reservation reservation) {
-        return reservationService.create(reservation);
+    public ReservationDTO create(@Valid @RequestBody ReservationDTO reservationDTO) {
+        return reservationService.create(reservationDTO);
     }
 
     @Operation(summary = "Modifier une réservation existante")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Réservation mise à jour avec succès"),
-            @ApiResponse(responseCode = "400", description = "Date de fin antérieure"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "404", description = "Réservation introuvable")
     })
     @PutMapping("/{id}")
-    public Reservation update(@Parameter(description = "Identifiant de la réservation") @PathVariable Long id, @RequestBody Reservation reservation) {
-        return reservationService.update(id, reservation);
+    public ReservationDTO update(@Parameter(description = "Identifiant de la réservation") @PathVariable Long id,
+                                 @Valid @RequestBody ReservationDTO reservationDTO) {
+        return reservationService.update(id, reservationDTO);
     }
 
     @Operation(summary = "Supprimer une réservation par identifiant")

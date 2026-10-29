@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import tn.esprit.autoloc.domain.Client;
 import tn.esprit.autoloc.exception.ResourceNotFoundException;
 import tn.esprit.autoloc.repository.IClientRepository;
+import tn.esprit.autoloc.web.dto.ClientDTO;
+import tn.esprit.autoloc.web.mapper.ClientMapper;
 
 import java.util.List;
 
@@ -13,47 +15,55 @@ import java.util.List;
 public class ClientServiceImpl implements IClientService {
 
     private final IClientRepository clientRepository;
+    private final ClientMapper clientMapper;
 
-    private void validateClient(Client client) {
-        if (client.getNom() == null || client.getNom().trim().isEmpty()) {
+    private void validateClient(ClientDTO dto) {
+        if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
             throw new IllegalArgumentException("Le nom du client ne peut pas être vide");
         }
-        if (client.getEmail() == null || client.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("L'e-mail du client ne peut pas être vide");
+        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("L'adresse email du client ne peut pas être vide");
         }
     }
 
     @Override
-    public Client create(Client client) {
-        if (client.getIdClient() != null) {
+    public ClientDTO create(ClientDTO clientDTO) {
+        if (clientDTO.getIdClient() != null) {
             throw new IllegalArgumentException("Un nouveau client ne doit pas avoir d'identifiant");
         }
-        validateClient(client);
-        return clientRepository.save(client);
+        validateClient(clientDTO);
+        Client client = clientMapper.toEntity(clientDTO);
+        Client saved = clientRepository.save(client);
+        return clientMapper.toDTO(saved);
     }
 
     @Override
-    public Client findById(Long id) {
-        return clientRepository.findById(id)
+    public ClientDTO findById(Long id) {
+        Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client", id));
+        return clientMapper.toDTO(client);
     }
 
     @Override
-    public List<Client> findAll() {
-        return clientRepository.findAll();
+    public List<ClientDTO> findAll() {
+        return clientMapper.toDTOList(clientRepository.findAll());
     }
 
     @Override
-    public Client update(Long id, Client client) {
-        validateClient(client);
-        Client existant = findById(id);
-        existant.setNom(client.getNom());
-        existant.setPrenom(client.getPrenom());
-        existant.setEmail(client.getEmail());
-        existant.setTelephone(client.getTelephone());
-        existant.setNumPermis(client.getNumPermis());
-        existant.setDateInscription(client.getDateInscription());
-        return clientRepository.save(existant);
+    public ClientDTO update(Long id, ClientDTO clientDTO) {
+        validateClient(clientDTO);
+        Client existant = clientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Client", id));
+
+        existant.setNom(clientDTO.getNom());
+        existant.setPrenom(clientDTO.getPrenom());
+        existant.setEmail(clientDTO.getEmail());
+        existant.setTelephone(clientDTO.getTelephone());
+        existant.setNumPermis(clientDTO.getNumPermis());
+        existant.setDateInscription(clientDTO.getDateInscription());
+
+        Client saved = clientRepository.save(existant);
+        return clientMapper.toDTO(saved);
     }
 
     @Override

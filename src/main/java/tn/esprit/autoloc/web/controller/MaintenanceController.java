@@ -5,11 +5,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import tn.esprit.autoloc.domain.Maintenance;
 import tn.esprit.autoloc.service.IMaintenanceService;
+import tn.esprit.autoloc.web.dto.MaintenanceDTO;
 
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class MaintenanceController {
     @Operation(summary = "Lister toutes les maintenances")
     @ApiResponse(responseCode = "200", description = "Liste des maintenances récupérée avec succès")
     @GetMapping
-    public List<Maintenance> findAll() {
+    public List<MaintenanceDTO> findAll() {
         return maintenanceService.findAll();
     }
 
@@ -34,30 +35,31 @@ public class MaintenanceController {
             @ApiResponse(responseCode = "404", description = "Maintenance introuvable")
     })
     @GetMapping("/{id}")
-    public Maintenance findById(@Parameter(description = "Identifiant de la maintenance") @PathVariable Long id) {
+    public MaintenanceDTO findById(@Parameter(description = "Identifiant de la maintenance") @PathVariable Long id) {
         return maintenanceService.findById(id);
     }
 
     @Operation(summary = "Créer une nouvelle maintenance")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Maintenance créée avec succès"),
-            @ApiResponse(responseCode = "400", description = "Date de fin antérieure ou présence d'identifiant")
+            @ApiResponse(responseCode = "400", description = "Date de fin antérieure ou données invalides")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Maintenance create(@RequestBody Maintenance maintenance) {
-        return maintenanceService.create(maintenance);
+    public MaintenanceDTO create(@Valid @RequestBody MaintenanceDTO maintenanceDTO) {
+        return maintenanceService.create(maintenanceDTO);
     }
 
     @Operation(summary = "Modifier une maintenance existante")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Maintenance mise à jour avec succès"),
-            @ApiResponse(responseCode = "400", description = "Date de fin antérieure"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
             @ApiResponse(responseCode = "404", description = "Maintenance introuvable")
     })
     @PutMapping("/{id}")
-    public Maintenance update(@Parameter(description = "Identifiant de la maintenance") @PathVariable Long id, @RequestBody Maintenance maintenance) {
-        return maintenanceService.update(id, maintenance);
+    public MaintenanceDTO update(@Parameter(description = "Identifiant de la maintenance") @PathVariable Long id,
+                                 @Valid @RequestBody MaintenanceDTO maintenanceDTO) {
+        return maintenanceService.update(id, maintenanceDTO);
     }
 
     @Operation(summary = "Supprimer une maintenance par identifiant")
